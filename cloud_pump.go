@@ -44,10 +44,16 @@ type MonResult struct {
 	Resp     *cloudwatch.GetMetricStatisticsResponse
 }
 
-func (mon *MonMon) AddCloudWatchMetric(cwMetric *CloudWatchMetric, resultC chan *MonResult) {
-	var quit = make(chan bool)
-	go cwMetric.MonCloudWatch(resultC, quit)
-	mon.Checkers[cwMetric.Key()] = quit
+func (mon *MonMon) AddCloudWatchMetric(cwMetric *CloudWatchMetric, resultC chan *MonResult) bool {
+	metricKey := cwMetric.Key()
+	if _, ok := mon.Checkers[metricKey]; !ok {
+		var quit = make(chan bool)
+		go cwMetric.MonCloudWatch(resultC, quit)
+		mon.Checkers[metricKey] = quit
+		return true
+	} else {
+		return false
+	}
 }
 
 func (mon *MonMon) RemoveCloudWatchMetric(cwMetric *CloudWatchMetric) bool {
