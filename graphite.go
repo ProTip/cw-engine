@@ -7,6 +7,12 @@ import (
 	"time"
 )
 
+func ResultsToGraphite(resultC <-chan *MonResult, host string, port int, bufferSize int) {
+	var metricC = make(chan *graphite.Metric, bufferSize)
+	go CloudPumpResultToMetrics(resultC, metricC)
+	go MetricsToGraphite(metricC, host, port)
+}
+
 func CloudPumpResultToMetrics(in <-chan *MonResult, out chan *graphite.Metric) {
 	for res := range in {
 		for _, metric := range res.Resp.GetMetricStatisticsResult.Datapoints {
