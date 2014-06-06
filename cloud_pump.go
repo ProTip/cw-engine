@@ -44,6 +44,48 @@ type MonResult struct {
 	Resp     *cloudwatch.GetMetricStatisticsResponse
 }
 
+func (mon *MonMon) AddCloudWatchMetric(cwMetric *CloudWatchMetric, resultC chan *MonResult) {
+	var quit = make(chan bool)
+	go cwMetric.MonCloudWatch(resultC, quit)
+	mon.Checkers[cwMetric.Key()] = quit
+}
+
+func (mon *MonMon) RemoveCloudWatchMetric(cwMetric *CloudWatchMetric) bool {
+	key := cwMetric.Key()
+	if quit, ok := mon.Checkers[key]; ok {
+		quit <- true
+		delete(mon.Checkers, key)
+		return true
+	} else {
+		return false
+	}
+}
+
+func (mon *MonMon) MonitorAllFoundFor(cwMetric *CloudWatchMetric, resultC chan *MonResult) {
+	listRequest := &cloudwatch.ListMetricsRequest{
+		MetricName: cwMetric.MetricName,
+		Namespace:  cwMetric.Namespace,
+		Dimensions: cwMetric.Dimensions}
+
+	listResponse, _ := cwMetric.CW().ListMetrics(listRequest)
+	pretty.Print(listResponse.ListMetricsResult.Metrics)
+
+	for _, metric := range listResponse.ListMetricsResult.Metrics {
+		newCwMetric := &CloudWatchMetric{
+			Dimensions:      metric.Dimensions,
+			Namespace:       metric.Namespace,
+			MetricName:      metric.MetricName,
+			rawDimensions:   cwMetric.rawDimensions,
+			Statistics:      cwMetric.Statistics,
+			Region:          cwMetric.Region,
+			CustomKey:       cwMetric.CustomKey,
+			CustomKeyFormat: cwMetric.CustomKeyFormat,
+			AwsSecret:       cwMetric.AwsSecret,
+			AwsKey:          cwMetric.AwsKey}
+		mon.AddCloudWatchMetric(newCwMetric, resultC)
+	}
+}
+
 func (cwMetric *CloudWatchMetric) SetDimensions(dimensions [][]string) {
 	var newDimensions = make([]cloudwatch.Dimension, 0)
 	for _, k := range dimensions {
@@ -99,48 +141,6 @@ func (cwMetric *CloudWatchMetric) MonCloudWatch(resultC chan *MonResult, quit ch
 		default:
 			<-ticker.C
 		}
-	}
-}
-
-func (mon *MonMon) AddCloudWatchMetric(cwMetric *CloudWatchMetric, resultC chan *MonResult) {
-	var quit = make(chan bool)
-	go cwMetric.MonCloudWatch(resultC, quit)
-	mon.Checkers[cwMetric.Key()] = quit
-}
-
-func (mon *MonMon) RemoveCloudWatchMetric(cwMetric *CloudWatchMetric) bool {
-	key := cwMetric.Key()
-	if quit, ok := mon.Checkers[key]; ok {
-		quit <- true
-		delete(mon.Checkers, key)
-		return true
-	} else {
-		return false
-	}
-}
-
-func (mon *MonMon) MonitorAllFoundFor(cwMetric *CloudWatchMetric, resultC chan *MonResult) {
-	listRequest := &cloudwatch.ListMetricsRequest{
-		MetricName: cwMetric.MetricName,
-		Namespace:  cwMetric.Namespace,
-		Dimensions: cwMetric.Dimensions}
-
-	listResponse, _ := cwMetric.CW().ListMetrics(listRequest)
-	pretty.Print(listResponse.ListMetricsResult.Metrics)
-
-	for _, metric := range listResponse.ListMetricsResult.Metrics {
-		newCwMetric := &CloudWatchMetric{
-			Dimensions:      metric.Dimensions,
-			Namespace:       metric.Namespace,
-			MetricName:      metric.MetricName,
-			rawDimensions:   cwMetric.rawDimensions,
-			Statistics:      cwMetric.Statistics,
-			Region:          cwMetric.Region,
-			CustomKey:       cwMetric.CustomKey,
-			CustomKeyFormat: cwMetric.CustomKeyFormat,
-			AwsSecret:       cwMetric.AwsSecret,
-			AwsKey:          cwMetric.AwsKey}
-		mon.AddCloudWatchMetric(newCwMetric, resultC)
 	}
 }
 
