@@ -19,7 +19,7 @@ func CloudPumpResultToMetrics(in <-chan *MonResult, out chan *graphite.Metric) {
 			graphiteMetric := &graphite.Metric{
 				res.CwMetric.GetCustomKey(), strconv.FormatFloat(metric.Sum, 'f', 5, 64), metric.Timestamp.Unix(),
 			}
-			fmt.Printf("%+v\n", graphiteMetric)
+			out <- graphiteMetric
 		}
 	}
 }
