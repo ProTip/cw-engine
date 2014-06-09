@@ -1,5 +1,5 @@
 // cloudpump project main.go
-package cloudpump
+package cwengine
 
 import (
 	"fmt"

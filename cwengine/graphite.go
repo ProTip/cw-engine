@@ -1,4 +1,4 @@
-package cloudpump
+package cwengine
 
 import (
 	"fmt"

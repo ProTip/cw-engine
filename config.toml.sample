@@ -1,0 +1,22 @@
+GraphiteHost = "192.168.1.2"
+GraphitePort = 2010
+
+[[Accounts]]
+AwsAccessKey = "?"
+AwsSecretKey = "?"
+	[[Accounts.Templates]]
+		Namespace = "AWS/RDS"
+		Backfill = 300
+		Period = 60
+		Interval = 120
+		CustomKeyFormat = "product.environment.rds-stuff.%0.%m"
+		DimensionList = [
+		 ["DBInstanceID",""]]
+	[[Accounts.Templates]]
+		Namespace = "AWS/EC2"
+		Backfill = 300
+		Period = 300
+		Interval = 300
+		CustomKeyFormat = "product.environment.ec2-simple.%0.%m"
+			DimensionList = [
+			["EC2InstanceID",""]]
