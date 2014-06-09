@@ -91,6 +91,7 @@ func (mon *MonMon) MonitorAllFoundFor(cwMetric *CloudWatchMetric, resultC chan *
 
 func (mon *MonMon) SearchMetrics(cwMetric *CloudWatchMetric, resultC chan *MonResult, quit chan bool) {
 	ticker := time.NewTicker(60 * time.Second)
+	currentMetrics := make(map[string]bool)
 	listRequest := &cloudwatch.ListMetricsRequest{
 		MetricName: cwMetric.MetricName,
 		Namespace:  cwMetric.Namespace,
@@ -107,7 +108,7 @@ func (mon *MonMon) SearchMetrics(cwMetric *CloudWatchMetric, resultC chan *MonRe
 				continue
 			}
 			pretty.Print(listResponse.ListMetricsResult.Metrics)
-			metrics := make(map[string]*CloudWatchMetric)
+			newMetrics := make(map[string]bool)
 			for _, metric := range listResponse.ListMetricsResult.Metrics {
 				newCwMetric := &CloudWatchMetric{
 					Dimensions:      metric.Dimensions,
@@ -120,21 +121,16 @@ func (mon *MonMon) SearchMetrics(cwMetric *CloudWatchMetric, resultC chan *MonRe
 					CustomKeyFormat: cwMetric.CustomKeyFormat,
 					AwsSecret:       cwMetric.AwsSecret,
 					AwsKey:          cwMetric.AwsKey}
-				metrics[newCwMetric.Key()] = newCwMetric
+				newMetrics[cwMetric.Key()] = true
 				mon.AddCloudWatchMetric(newCwMetric, resultC)
 			}
 
-			mon.lock.RLock()
-			checkersKeys := make([]string, 0, 0)
-			for k, _ := range mon.Checkers {
-				checkersKeys = append(checkersKeys, k)
-			}
-			mon.lock.RUnlock()
-			for _, key := range checkersKeys {
-				if _, ok := metrics[key]; !ok {
+			for key, _ := range currentMetrics {
+				if _, ok := newMetrics[key]; !ok {
 					mon.RemoveCloudWatchMetricByKey(key)
 				}
 			}
+			currentMetrics = newMetrics
 			<-ticker.C
 		}
 	}
