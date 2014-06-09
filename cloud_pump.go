@@ -99,10 +99,8 @@ func (mon *MonMon) SearchMetrics(cwMetric *CloudWatchMetric, resultC chan *MonRe
 			listResponse, err := cwMetric.CW().ListMetrics(listRequest)
 			if err != nil {
 				fmt.Println(err.Error())
-				return
 			}
 			pretty.Print(listResponse.ListMetricsResult.Metrics)
-
 			for _, metric := range listResponse.ListMetricsResult.Metrics {
 				newCwMetric := &CloudWatchMetric{
 					Dimensions:      metric.Dimensions,
