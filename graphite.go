@@ -7,10 +7,26 @@ import (
 	"time"
 )
 
-func ResultsToGraphite(resultC <-chan *MonResult, host string, port int, bufferSize int) {
+func (mon *MonMon) ResultsToGraphite(resultC <-chan *MonResult, host string, port int, bufferSize int) {
 	var metricC = make(chan *graphite.Metric, bufferSize)
 	go CloudPumpResultToMetrics(resultC, metricC)
 	go MetricsToGraphite(metricC, host, port)
+	go mon.StatsToGraphite(metricC)
+}
+
+func (mon *MonMon) StatsToGraphite(out chan *graphite.Metric) {
+	if mon.StatsInterval == 0 {
+		mon.StatsInterval = 10
+	}
+	ticker := time.NewTicker(time.Duration(mon.StatsInterval) * time.Second)
+	for _ = range ticker.C {
+		for k, v := range mon.StatsMap() {
+			graphiteMetric := &graphite.Metric{
+				mon.StatsKeyPrefix + "." + k, strconv.FormatFloat(float64(v), 'f', 5, 64), time.Now().Unix(),
+			}
+			out <- graphiteMetric
+		}
+	}
 }
 
 func CloudPumpResultToMetrics(in <-chan *MonResult, out chan *graphite.Metric) {

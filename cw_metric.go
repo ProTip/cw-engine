@@ -55,10 +55,16 @@ func (cwMetric *CloudWatchMetric) GetDimensionValue(name string) string {
 }
 
 func (cwMetric *CloudWatchMetric) MonCloudWatch(resultC chan *MonResult, quit chan bool) {
-	ticker := time.NewTicker(time.Duration(cwMetric.Interval) * time.Second)
 	if cwMetric.Period == 0 {
 		cwMetric.Period = 60
 	}
+	if cwMetric.Interval == 0 {
+		cwMetric.Interval = 60
+	}
+	if cwMetric.Backfill == 0 {
+		cwMetric.Backfill = 120
+	}
+	ticker := time.NewTicker(time.Duration(cwMetric.Interval) * time.Second)
 
 	for {
 		now := time.Now()
@@ -71,6 +77,7 @@ func (cwMetric *CloudWatchMetric) MonCloudWatch(resultC chan *MonResult, quit ch
 			Statistics: cwMetric.Statistics,
 			Namespace:  cwMetric.Namespace,
 		}
+		fmt.Printf("%+v\n", request)
 		response, err := cwMetric.CW().GetMetricStatistics(request)
 		if err != nil {
 			fmt.Println(err.Error())

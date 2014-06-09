@@ -22,9 +22,12 @@ var (
 )
 
 type MonMon struct {
-	Checkers  map[string]chan bool
-	Searchers map[string]chan bool
-	lock      sync.RWMutex
+	Checkers       map[string]chan bool
+	Searchers      map[string]chan bool
+	GenerateStats  bool
+	StatsKeyPrefix string
+	StatsInterval  int
+	lock           sync.RWMutex
 }
 
 type MetricSearcher struct {
@@ -134,4 +137,23 @@ func (mon *MonMon) SearchMetrics(cwMetric *CloudWatchMetric, resultC chan *MonRe
 			<-ticker.C
 		}
 	}
+}
+
+func (mon *MonMon) StatsMap() map[string]int {
+	stats := make(map[string]int)
+	stats["templates_tracked"] = mon.SearcherCount()
+	stats["metrics_tracked"] = mon.CheckerCount()
+	return stats
+}
+
+func (mon *MonMon) SearcherCount() int {
+	mon.lock.RLock()
+	defer mon.lock.RUnlock()
+	return len(mon.Searchers)
+}
+
+func (mon *MonMon) CheckerCount() int {
+	mon.lock.RLock()
+	defer mon.lock.RUnlock()
+	return len(mon.Checkers)
 }
