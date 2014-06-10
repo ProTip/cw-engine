@@ -16,7 +16,7 @@ func (mon *MonMon) ResultsToGraphite(resultC <-chan *MonResult, host string, por
 
 func (mon *MonMon) StatsToGraphite(out chan *graphite.Metric) {
 	if mon.StatsInterval == 0 {
-		mon.StatsInterval = 10
+		mon.StatsInterval = 5
 	}
 	ticker := time.NewTicker(time.Duration(mon.StatsInterval) * time.Second)
 	for _ = range ticker.C {

@@ -29,6 +29,7 @@ type MonMon struct {
 	StatsInterval  int
 	lock           sync.RWMutex
 	Throttles      int
+	ApiCalls       int
 }
 
 type MetricSearcher struct {
@@ -69,7 +70,15 @@ func (mon *MonMon) RemoveCloudWatchMetric(cwMetric *CloudWatchMetric) bool {
 }
 
 func (mon *MonMon) ReportThrottle() {
+	mon.lock.Lock()
 	mon.Throttles += 1
+	mon.lock.Unlock()
+}
+
+func (mon *MonMon) ReportApiCall() {
+	mon.lock.Lock()
+	mon.ApiCalls += 1
+	mon.lock.Unlock()
 }
 
 func (mon *MonMon) RemoveCloudWatchMetricByKey(key string) bool {
@@ -109,6 +118,7 @@ func (mon *MonMon) SearchMetrics(cwMetric *CloudWatchMetric, resultC chan *MonRe
 		case <-quit:
 			return
 		default:
+			mon.ReportApiCall()
 			listResponse, err := cwMetric.CW().ListMetrics(listRequest)
 			if err != nil {
 				fmt.Println(err.Error())
@@ -168,6 +178,7 @@ func (mon *MonMon) MonCloudWatch(cwMetric *CloudWatchMetric, resultC chan *MonRe
 			Namespace:  cwMetric.Namespace,
 		}
 		fmt.Printf("%+v\n", request)
+		mon.ReportApiCall()
 		response, err := cwMetric.CW().GetMetricStatistics(request)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -200,6 +211,7 @@ func (mon *MonMon) StatsMap() map[string]int {
 	stats["templates_tracked"] = mon.SearcherCount()
 	stats["metrics_tracked"] = mon.CheckerCount()
 	stats["api_throttle_count"] = mon.Throttles
+	stats["api_calls"] = mon.ApiCalls
 	return stats
 }
 
