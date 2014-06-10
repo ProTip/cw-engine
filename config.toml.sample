@@ -6,17 +6,21 @@ AwsAccessKey = "?"
 AwsSecretKey = "?"
 	[[Accounts.Templates]]
 		Namespace = "AWS/RDS"
+		Region = "ap-southeast-2"
 		Backfill = 300
 		Period = 60
 		Interval = 120
-		CustomKeyFormat = "product.environment.rds-stuff.%0.%m"
+		CustomKeyFormat = "some_product.dev_environment.rds-stuff.%0.%m"
+		Statistics = ["Sum"]
 		DimensionList = [
-		 ["DBInstanceID",""]]
+			["DBInstanceIdentifier",""]]
 	[[Accounts.Templates]]
 		Namespace = "AWS/EC2"
+		Region = "ap-southeast-2"
 		Backfill = 300
 		Period = 300
 		Interval = 300
-		CustomKeyFormat = "product.environment.ec2-simple.%0.%m"
-			DimensionList = [
-			["EC2InstanceID",""]]
+		CustomKeyFormat = "some_product.dev_environment.ec2-simple.%0.%m"
+		Statistics = ["Sum"]
+		DimensionList = [
+			["InstanceID",""]]

@@ -148,6 +148,7 @@ func (cwMetric *CloudWatchMetric) GetCustomKey() string {
 	if cwMetric.CustomKey == "" {
 		fmt.Println("CustomKey is blank, expanding: ", cwMetric.CustomKeyFormat)
 		cwMetric.CustomKey = StringFormatExp.ReplaceAllStringFunc(cwMetric.CustomKeyFormat, replacer)
+		fmt.Println("CustomKey expanded to: ", cwMetric.CustomKey)
 	}
 	return cwMetric.CustomKey
 }
