@@ -54,54 +54,6 @@ func (cwMetric *CloudWatchMetric) GetDimensionValue(name string) string {
 	return ""
 }
 
-func (cwMetric *CloudWatchMetric) MonCloudWatch(resultC chan *MonResult, quit chan bool) {
-	if cwMetric.Period == 0 {
-		cwMetric.Period = 60
-	}
-	if cwMetric.Interval == 0 {
-		cwMetric.Interval = 60
-	}
-	if cwMetric.Backfill == 0 {
-		cwMetric.Backfill = 120
-	}
-	ticker := time.NewTicker(time.Duration(cwMetric.Interval) * time.Second)
-
-	for {
-		now := time.Now()
-		request := &cloudwatch.GetMetricStatisticsRequest{
-			Dimensions: cwMetric.Dimensions,
-			EndTime:    now,
-			StartTime:  cwMetric.UpdateFrom(),
-			MetricName: cwMetric.MetricName,
-			Period:     cwMetric.Period,
-			Statistics: cwMetric.Statistics,
-			Namespace:  cwMetric.Namespace,
-		}
-		fmt.Printf("%+v\n", request)
-		response, err := cwMetric.CW().GetMetricStatistics(request)
-		if err != nil {
-			fmt.Println(err.Error())
-		} else {
-			cwMetric.lastUpdated = now
-			fmt.Printf("%+v\n", response.GetMetricStatisticsResult.Datapoints)
-			select {
-			case resultC <- &MonResult{
-				CwMetric: cwMetric,
-				Resp:     response}:
-			default:
-				fmt.Println("Result channel full?")
-			}
-		}
-		select {
-		case <-quit:
-			return
-		default:
-			c := ticker.C
-			<-c
-		}
-	}
-}
-
 func (cwMetric *CloudWatchMetric) CW() *cloudwatch.CloudWatch {
 	if cwMetric.cw != nil {
 		return cwMetric.cw

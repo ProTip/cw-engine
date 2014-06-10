@@ -11,7 +11,7 @@ import (
 	_ "os"
 	"regexp"
 	_ "strconv"
-	_ "strings"
+	"strings"
 	"sync"
 	"time"
 )
@@ -28,6 +28,7 @@ type MonMon struct {
 	StatsKeyPrefix string
 	StatsInterval  int
 	lock           sync.RWMutex
+	Throttles      int
 }
 
 type MetricSearcher struct {
@@ -54,7 +55,7 @@ func (mon *MonMon) AddCloudWatchMetric(cwMetric *CloudWatchMetric, resultC chan 
 	fmt.Println("<---->\nAsked to add: ", metricKey, "\n<---->")
 	if _, ok := mon.Checkers[metricKey]; !ok {
 		var quit = make(chan bool)
-		go cwMetric.MonCloudWatch(resultC, quit)
+		go mon.MonCloudWatch(cwMetric, resultC, quit)
 		mon.Checkers[metricKey] = quit
 		return true
 	} else {
@@ -65,6 +66,10 @@ func (mon *MonMon) AddCloudWatchMetric(cwMetric *CloudWatchMetric, resultC chan 
 
 func (mon *MonMon) RemoveCloudWatchMetric(cwMetric *CloudWatchMetric) bool {
 	return mon.RemoveCloudWatchMetricByKey(cwMetric.Key())
+}
+
+func (mon *MonMon) ReportThrottle() {
+	mon.Throttles += 1
 }
 
 func (mon *MonMon) RemoveCloudWatchMetricByKey(key string) bool {
@@ -139,10 +144,62 @@ func (mon *MonMon) SearchMetrics(cwMetric *CloudWatchMetric, resultC chan *MonRe
 	}
 }
 
+func (mon *MonMon) MonCloudWatch(cwMetric *CloudWatchMetric, resultC chan *MonResult, quit chan bool) {
+	if cwMetric.Period == 0 {
+		cwMetric.Period = 60
+	}
+	if cwMetric.Interval == 0 {
+		cwMetric.Interval = 60
+	}
+	if cwMetric.Backfill == 0 {
+		cwMetric.Backfill = 120
+	}
+	ticker := time.NewTicker(time.Duration(cwMetric.Interval) * time.Second)
+
+	for {
+		now := time.Now()
+		request := &cloudwatch.GetMetricStatisticsRequest{
+			Dimensions: cwMetric.Dimensions,
+			EndTime:    now,
+			StartTime:  cwMetric.UpdateFrom(),
+			MetricName: cwMetric.MetricName,
+			Period:     cwMetric.Period,
+			Statistics: cwMetric.Statistics,
+			Namespace:  cwMetric.Namespace,
+		}
+		fmt.Printf("%+v\n", request)
+		response, err := cwMetric.CW().GetMetricStatistics(request)
+		if err != nil {
+			fmt.Println(err.Error())
+			if strings.Contains(err.Error(), "Throttle") {
+				mon.ReportThrottle()
+			}
+		} else {
+			cwMetric.lastUpdated = now
+			fmt.Printf("%+v\n", response.GetMetricStatisticsResult.Datapoints)
+			select {
+			case resultC <- &MonResult{
+				CwMetric: cwMetric,
+				Resp:     response}:
+			default:
+				fmt.Println("Result channel full?")
+			}
+		}
+		select {
+		case <-quit:
+			return
+		default:
+			c := ticker.C
+			<-c
+		}
+	}
+}
+
 func (mon *MonMon) StatsMap() map[string]int {
 	stats := make(map[string]int)
 	stats["templates_tracked"] = mon.SearcherCount()
 	stats["metrics_tracked"] = mon.CheckerCount()
+	stats["api_throttle_count"] = mon.Throttles
 	return stats
 }
 
