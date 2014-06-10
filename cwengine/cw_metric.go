@@ -3,8 +3,8 @@ package cwengine
 import (
 	"fmt"
 	"github.com/crowdmob/goamz/aws"
-	"github.com/crowdmob/goamz/cloudwatch"
 	"github.com/pmylund/sortutil"
+	"github.com/protip/goamz/cloudwatch"
 	"os"
 	"strconv"
 	"strings"
