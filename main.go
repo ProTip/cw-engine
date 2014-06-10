@@ -5,7 +5,6 @@ import (
 	"github.com/burntsushi/toml"
 	"github.com/kr/pretty"
 	"github.com/protip/cw-engine/cwengine"
-	"time"
 )
 
 type Config struct {
@@ -49,7 +48,7 @@ func main() {
 	fmt.Println("Hello World!!!!!")
 	pretty.Print(conf)
 	PrimeEngine()
-	time.Sleep(300 * time.Second)
+	select {}
 }
 
 func PrimeEngine() {
