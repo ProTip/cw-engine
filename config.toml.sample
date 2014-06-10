@@ -1,5 +1,7 @@
 GraphiteHost = "192.168.1.2"
 GraphitePort = 2010
+StatsInterval = 10
+StatsKeyPrefix = "some_product.dev_environment.cloudpump"
 
 [[Accounts]]
 AwsAccessKey = "?"

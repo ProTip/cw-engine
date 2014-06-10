@@ -12,6 +12,8 @@ type Config struct {
 	GraphiteHost   string
 	GraphitePort   int
 	GraphiteBuffer int
+	StatsInterval  int
+	StatsKeyPrefix string
 	Accounts       []Account
 }
 
@@ -39,6 +41,8 @@ func init() {
 	cwMonMon = cwengine.NewMonMon()
 	resultC = make(chan *cwengine.MonResult, 100000)
 	cwMonMon.ResultsToGraphite(resultC, conf.GraphiteHost, conf.GraphitePort, conf.GraphiteBuffer)
+	cwMonMon.StatsInterval = conf.StatsInterval
+	cwMonMon.StatsKeyPrefix = conf.StatsKeyPrefix
 }
 
 func main() {
