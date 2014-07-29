@@ -2,7 +2,7 @@
 
 
 ## Overview
-cw-engine is a bundled monitoring "engine" package and daemon, CloudPump.  
+cw-engine is a bundled monitoring "engine" package and daemon, CloudPump, for extracting CloudWatch metrics from AWS and sending them elsewhere; graphite is included.  CloudPump can be used by itself, or the engine can be imported into your own project for customization.
 
 ## cw-engine
 Engines are envisioned as packages that provide an API to a systems for monitoring a particular resource, CloudWatch in this case, which are then consumed in an application exposing the external API.  This external API may be configuration files, REST endpoints, etc.  They abstract away the concurrency and connection details, provide an easy to use API, and are hot-reconfigurable.
