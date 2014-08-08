@@ -4,10 +4,10 @@ package cwengine
 import (
 	"fmt"
 	_ "github.com/crowdmob/goamz/aws"
+	"github.com/crowdmob/goamz/cloudwatch"
 	_ "github.com/davecgh/go-spew/spew"
 	"github.com/kr/pretty"
 	_ "github.com/pmylund/sortutil"
-	"github.com/protip/goamz/cloudwatch"
 	_ "os"
 	"regexp"
 	_ "strconv"

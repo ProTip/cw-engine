@@ -1,5 +1,6 @@
 GraphiteHost = "192.168.1.2"
 GraphitePort = 2010
+GraphiteBuffer = 100000
 StatsInterval = 10
 StatsKeyPrefix = "some_product.dev_environment.cloudpump"
 
